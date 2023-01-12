@@ -1,0 +1,8 @@
+logs
+temp
+.env.*
+*.*~
+data
+venv
+.idea
+__pycache__

@@ -1,0 +1,37 @@
+version: '3.7'
+
+services:
+  trader-cron:
+    build:
+      context: ./cron
+      dockerfile: Dockerfile
+    container_name: trader-cron
+    restart: unless-stopped
+    env_file:
+      - .env.development
+    volumes:
+      - trader-cron-data:/data
+    depends_on:
+      - trader-mysql
+    healthcheck:
+      test: [ 'CMD', 'mysqladmin', 'ping', '--silent', '-h', 'trader-mysql' ]
+      start_period: 10s
+      interval: 60s
+      timeout: 120s
+      retries: 6
+
+  trader-mysql:
+    image: mysql/mysql-server:5.7.37
+    container_name: trader-mysql
+    command: --lower_case_table_names=0
+    restart: unless-stopped
+    ports:
+      - '5002:3306'
+    env_file:
+      - .env.development
+    volumes:
+      - trader-mysql-data:/data/mysql
+
+volumes:
+  trader-mysql-data:
+  trader-cron-data:

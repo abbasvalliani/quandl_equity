@@ -1,0 +1,1 @@
+docker exec -it trader-cron bash ./logs.sh

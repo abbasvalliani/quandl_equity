@@ -1,0 +1,1 @@
+mysql -u $MYSQL_USER -p$MYSQL_PASSWORD -h $MYSQL_HOST --database $MYSQL_DATABASE
