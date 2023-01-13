@@ -51,7 +51,7 @@ def get_column_map(table_name, column_name, lookup):
            'numeric': 'bigint',
            'percent': 'decimal(11,6)',
            '%': 'decimal(11,6)',
-           'ratio': 'decimal(13,4)',
+           'ratio': 'decimal(14,4)',
            'text': 'varchar(255)',
            'units': 'bigint',
            'USD': 'double',

@@ -6,7 +6,7 @@ import subprocess
 import zipfile
 import logging
 import logging.handlers
-from utils import simple_file_replace
+from utils import mysql_delimiter_replace
 from download import bulk_fetch
 from create_ddl import *
 from mysql_utils import *
@@ -94,7 +94,7 @@ def import_data(api_key, data_dir, username, password, host, db):
 
             # replace the null
             logging.info("Starting to replace NULL's in table: %s" % (updated_table))
-            simple_file_replace(csv_file, ',,', ',\\N,')
+            mysql_delimiter_replace(csv_file)
             logging.info("Done with null replacements for table: %s" % (updated_table))
             ddl_schema_file = os.path.join(ddl_dir, "%s.sql" % (updated_table))
             ddl_index_file = os.path.join(ddl_dir, "%s_index.sql" % (updated_table))
