@@ -56,7 +56,7 @@ def get_column_map(table_name, column_name, lookup):
            'units': 'bigint',
            'USD': 'double',
            'USD millions': 'double',
-           'USD/share': 'decimal(14,4)',
+           'USD/share': 'decimal(16,4)',
            'Y/N': 'char(1)'
            }
     if lookup not in map:
