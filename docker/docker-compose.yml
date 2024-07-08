@@ -2,13 +2,14 @@ version: '3.7'
 
 services:
   trader-cron:
+    platform: linux/x86_64
     build:
       context: ./cron
       dockerfile: Dockerfile
     container_name: trader-cron
     restart: unless-stopped
     env_file:
-      - .env.development
+      - .env
     volumes:
       - trader-cron-data:/data
     depends_on:
@@ -21,14 +22,15 @@ services:
       retries: 6
 
   trader-mysql:
-    image: mysql/mysql-server:5.7.37
+    #image: mysql/mysql-server:5.7.37
+    image: mariadb:latest
     container_name: trader-mysql
     command: --lower_case_table_names=0
     restart: unless-stopped
     ports:
       - '5002:3306'
     env_file:
-      - .env.development
+      - .env
     volumes:
       - trader-mysql-data:/data/mysql
 

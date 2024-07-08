@@ -6,26 +6,35 @@ quickly to get this done. Only a few hours of code, but atleast the goal was ach
 
 WHAT DOES THIS DO
 =================
-If you subscribe to QUANDL, you can get access to the entire stock market data for the past 5 years.
-This is critical if you're developing ML based equity models. The docker
-images downloads QUANDL file every day and inserts it into a MYSQL database.
+If you subscribe to QUANDL, you can get access to the entire stock market data for the past 30/40 years.
+This is critical if you're developing ML based equity models. 
 
 HOW DOES IT WORK
 =================
 Create a .env file in the directory with the following:
 
-QUANDL_API=******
-MYSQL_USER=myuser
-MYSQL_PASSWORD=mypassword
-MYSQL_DATABASE=mydatabase
-MYSQL_HOST=trader-mysql
+LOG_DIR=./temp_data/logs
+EQUITY_DATA_DIR=./temp_data/equity_data
+EQUITY_ANALYTICS_DIR=./temp_data/analytics_data
+QUANDL_API=<use your key>
+MYSQL_USER=trader
+MYSQL_PASSWORD=<create one>
+MYSQL_DATABASE=trader
+MYSQL_HOST=localhost
+MARIADB_ROOT_PASSWORD=<create one>
 
-> To build and run:
-docker-compose up -d
+> create a conda environment (make sure conda is installed):
+./env_setup.sh
 
-> To check logs:
-cron\logs.cmd
+> download equities data and import to mysql
+./equity_download.sh
 
-> To access cron terminal:
-cron\terminal.cmd
+> run analytics preparation
+./prep.sh
+
+> import model ready data into mysql
+./import_model_data.sh
+
+> start training
+./train.sh
 ```

@@ -1,8 +1,11 @@
 logs
 temp
-.env.*
+.env
+.env
 *.*~
 data
 venv
 .idea
 __pycache__
+temp_data
+.DS_Store

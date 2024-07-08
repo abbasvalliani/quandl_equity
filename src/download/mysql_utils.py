@@ -12,11 +12,18 @@ from mysql.connector import errorcode
 from pathlib import Path
 from sys import exit
 
+
 def update_table_import(table, last_updated, username, password, host, db):
     try:
         logging.info("META: %s, LastUpdated:%s" % (table, last_updated))
-        mysqldb = mysql.connector.connect(user=username, passwd=password, host=host, db=db,
-                                          auth_plugin='mysql_native_password')
+        mysqldb = mysql.connector.connect(
+            user=username,
+            password=password,
+            host=host,
+            db=db,
+            charset='utf8mb4',
+            collation='utf8mb4_general_ci'
+        )
         cursor = mysqldb.cursor()
         sql = "insert into META value (%s,%s) on duplicate key update last_updated = %s"
         val = (table, last_updated, last_updated)
@@ -34,8 +41,15 @@ def update_table_import(table, last_updated, username, password, host, db):
 def get_tables_to_update(download_meta, username, password, host, db):
     need_to_update_tables = []
     try:
-        mysqldb = mysql.connector.connect(user=username, passwd=password, host=host, db=db,
-                                          auth_plugin='mysql_native_password')
+        mysqldb = mysql.connector.connect(
+            user=username,
+            password=password,
+            host=host,
+            db=db,
+            charset='utf8mb4',
+            collation='utf8mb4_general_ci'
+        )
+
         cursor = mysqldb.cursor()
         sql = "SELECT table_name, last_updated from META"
         rowcount = cursor.execute(sql)
@@ -58,7 +72,8 @@ def get_tables_to_update(download_meta, username, password, host, db):
                 last_refreshed_time = table_meta['last_refreshed_time']
                 db_last_refreshed_time = table_db[table]
                 if last_refreshed_time != db_last_refreshed_time:
-                    logging.info("Table %s will be updated DB:'%s' DOWNLOAD:'%s'" % (table, db_last_refreshed_time, last_refreshed_time))
+                    logging.info("Table %s will be updated DB:'%s' DOWNLOAD:'%s'" % (
+                    table, db_last_refreshed_time, last_refreshed_time))
                     need_to_update_tables.append(table)
         return need_to_update_tables
     except mysql.connector.Error as e:
@@ -110,6 +125,7 @@ def create_database(db, username, password, host):
         logging.error("SQL Command error: %s %s", res, res[1])
     return proc.returncode
 
+
 def execSql(file, username, password, host, db):
     command = 'mysql -u%s -p%s -h%s --database=%s < %s' % (username, password, host, db, file)
     return sqlCommand(command)
@@ -135,7 +151,7 @@ def importCsv(file, username, password, host, db, table):
     if os.name == 'nt':
         file = re.escape(file)
     sql = "util.importTable('%s', {schema: '%s', table: '%s', dialect: 'csv-unix', skipRows: 1, showProgress: true, columns:[%s]})" % (
-    file, db, table, column_import)
+        file, db, table, column_import)
     command = 'mysqlsh --mysql -u%s -p%s -h%s --database=%s -e "%s"' % (username, password, host, db, sql)
     logging.debug("Running import command %s", sql)
     logging.info("Importing file into table %s" % (table))

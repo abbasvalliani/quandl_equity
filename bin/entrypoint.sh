@@ -13,7 +13,7 @@ while ! mysqladmin ping -h"$MYSQL_HOST" --silent; do
     sleep 1
 done
 echo "$MYSQL_HOST is up now."
-bash /var/scripts/import.sh >> /var/log/import.log 2>&1
+bash /var/scripts/equity_download.sh >> /var/log/import.log 2>&1
 
 # We'll tail logs
 tail -f /var/log/import.log

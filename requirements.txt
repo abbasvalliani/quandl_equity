@@ -1,0 +1,9 @@
+mysql-connector-python
+pandas
+numpy
+matplotlib
+scikit-learn
+tensorflow
+python-dotenv
+sqlalchemy
+pymysql
