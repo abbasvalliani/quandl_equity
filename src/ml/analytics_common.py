@@ -17,20 +17,10 @@ class AnalyticsCommon:
     def get_sequence():
         return 3
 
+
     @staticmethod
-    def read_file(data_file, num_rows=None):
-        data = None
-        print(f"Reading file {data_file} and rows:{num_rows}")
-        if num_rows == None:
-            data = pd.read_csv(data_file)
-        else:
-            data = pd.read_csv(data_file, nrows=num_rows)
-
-        print(f"Done reading file {data_file} and rows:{num_rows}")
-
-        data['calendardate'] = pd.to_datetime(data['calendardate'])
-        data['reportingquarter'] = data['calendardate'].dt.quarter
-        data = data[[
+    def get_model_columns():
+        return [
             'ticker',
             'calendardate',
             'reportingquarter',
@@ -68,7 +58,22 @@ class AnalyticsCommon:
             'real-rate-1-year_ttm',
             'real-rate-10-year_ttm',
             'result'
-        ]]
+        ]
+
+    @staticmethod
+    def read_file(data_file, num_rows=None):
+        data = None
+        print(f"Reading file {data_file} and rows:{num_rows}")
+        if num_rows == None:
+            data = pd.read_csv(data_file)
+        else:
+            data = pd.read_csv(data_file, nrows=num_rows)
+
+        print(f"Done reading file {data_file} and rows:{num_rows}")
+
+        data['calendardate'] = pd.to_datetime(data['calendardate'])
+        data['reportingquarter'] = data['calendardate'].dt.quarter
+        data = data[AnalyticsCommon.get_model_columns()]
 
         return data
 

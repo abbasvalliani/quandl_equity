@@ -15,5 +15,5 @@ LOG_FILE=$LOG_DIR/quandl_download.log
 LOG_LEVEL=INFO
 
 echo 'Running quandl download and mysql import'
-python3 src/download/main.py $QUANDL_API $EQUITY_DATA_DIR $MYSQL_USER $MYSQL_PASSWORD $MYSQL_HOST $MYSQL_DATABASE $LOG_FILE $LOG_LEVEL
+python3 src/download/main.py $QUANDL_API $EQUITY_DATA_DIR $LOG_FILE $LOG_LEVEL $MYSQL_USER $MYSQL_PASSWORD $MYSQL_HOST $MYSQL_DATABASE
 

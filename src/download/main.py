@@ -21,11 +21,29 @@ updated_tables = []
 __location__ = os.path.realpath(
     os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
+def download_files(api_key, data_dir):
+    download_meta = {}
+    for table in sh_tables:
+        result = bulk_fetch(api_key, table, data_dir)
+        download_meta[table] = result
+    return download_meta
 
 # created the data directory
 def import_data(api_key, data_dir, username, password, host, db):
-    updated_tables = []
+    db_upload = (db is not None and username is not None and password is not None and host is not None)
 
+    #
+    # download data files from server
+    #
+    download_meta = download_files(api_key, data_dir)
+
+    if not db_upload:
+        logging.info("No database configuration provided.")
+        sys.exit(0)
+
+    #
+    # create database if needed
+    #
     ddl_dir = os.path.join(data_dir, 'ddl')
 
     Path(data_dir).mkdir(parents=True, exist_ok=True)
@@ -44,14 +62,6 @@ def import_data(api_key, data_dir, username, password, host, db):
         logging.error("Unable to create meta table")
         exit(1)
 
-
-    #
-    # download data files from server
-    #
-    download_meta = {}
-    for table in sh_tables:
-        result = bulk_fetch(api_key, table, data_dir)
-        download_meta[table] = result
 
     #
     # add more tables if they have a zero count or missing tables
@@ -126,12 +136,16 @@ def import_data(api_key, data_dir, username, password, host, db):
 def main():
     api_key = sys.argv[1]
     data_dir = sys.argv[2]
-    username = sys.argv[3]
-    password = sys.argv[4]
-    host = sys.argv[5]
-    db = sys.argv[6]
-    logfile = sys.argv[7]
-    loglevel = sys.argv[8]
+    logfile = sys.argv[3]
+    loglevel = sys.argv[4]
+
+    username = password = host = db = None
+
+    if len(sys.argv) > 5 and len(sys.argv) < 10:
+        username = sys.argv[5]
+        password = sys.argv[6]
+        host = sys.argv[7]
+        db = sys.argv[8]
 
     logging.basicConfig(
         level=loglevel,
