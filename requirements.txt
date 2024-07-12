@@ -7,3 +7,6 @@ tensorflow
 python-dotenv
 sqlalchemy
 pymysql
+requests
+scikeras
+

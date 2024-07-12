@@ -22,7 +22,7 @@ class CsvSqlImporter:
         print(f"Import CSV: {self.csv_file} with length: {len(df)} into table: {self.table_name}")
 
         engine = create_engine(f'mysql+pymysql://{self.username}:{self.password}@{self.host}/{self.database}')
-        df.to_sql(name=self.table_name, con=engine, if_exists='replace', index=False)
+        df.to_sql(name=self.table_name, con=engine, if_exists='replace', index=False, method='multi')
 
 
 if __name__ == "__main__":

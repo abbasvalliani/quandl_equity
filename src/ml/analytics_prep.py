@@ -4,6 +4,9 @@ import pandas as pd
 import os
 import numpy as np
 from pandas.tseries.offsets import DateOffset
+import requests
+from io import BytesIO
+from constants import Constants
 
 
 class Utils:
@@ -48,10 +51,58 @@ class EquityModel:
         self.actions = None
         self.last_price = None
         self.data_dir = data_dir
+        self.export_columns = [
+            'ticker',
+            'calendardate',
+            'reportperiod',
+            'eps',
+            'bvps',
+            'dps',
+            'divyield',
+            'revenueusd',
+            'netinccmnusd',
+            'equityusd',
+            'assetsusd',
+            'debtusd',
+            'cashnequsd',
+            'liabilitiesusd',
+            'liabilitiescusd',
+            'liabilitiesncusd',
+            'assetscusd',
+            'assetsncusd',
+            'debtcusd',
+            'debtncusd',
+            'intangiblesusd',
+            'fcfusd',
+            'marketcap',
+            'ps',
+            'pe',
+            'roe',
+            'roa',
+            'pb',
+            'de',
+            'netmargin',
+            'grossmargin',
+            'sicindustry',
+            'sicsector',
+            'sector',
+            'industry',
+            'real-rate-1-month_ttm',
+            'real-rate-1-year_ttm',
+            'real-rate-10-year_ttm',
+            'future_return',
+            'result'
+        ]
 
     def read_rates(self):
-        # read real rates and calculate trailing 12 month
-        self.real_rates = pd.read_csv("market_data/real_rates.csv")
+        # import the workbook if available
+        url = 'https://www.clevelandfed.org/-/media/files/webcharts/inflationexpectations/inflation-expectations.xlsx?sc_lang=en&hash=3F94FEE8DAA429F01D7B5FE51C990D58'
+        response = requests.get(url)
+        response.raise_for_status()
+        excel_data = BytesIO(response.content)
+        self.real_rates = pd.read_excel(excel_data, sheet_name='Real Interest Rate')
+        self.real_rates = self.real_rates.dropna()
+
         self.real_rates['Model Output Date'] = pd.to_datetime(self.real_rates['Model Output Date'], format='%m/%d/%y',
                                                               errors='coerce')
         self.real_rates = self.real_rates.rename(columns={
@@ -60,6 +111,13 @@ class EquityModel:
             'Real Rate 1-year': 'real-rate-1-year',
             'Real Rate 10-year ': 'real-rate-10-year',
         })
+
+        # adjust for the last month
+        last_row = self.real_rates.iloc[-1].copy()
+        last_row['real-rate-model-date'] = last_row['real-rate-model-date'] + pd.DateOffset(months=1)
+        last_row_df = pd.DataFrame([last_row])
+        self.real_rates = pd.concat([self.real_rates, last_row_df], ignore_index=True)
+
         self.real_rates['calendardate'] = self.real_rates['real-rate-model-date'] - pd.DateOffset(days=1)
         self.real_rates.set_index('calendardate', inplace=True)
         columns_to_average = ['real-rate-1-month', 'real-rate-1-year', 'real-rate-10-year']
@@ -272,7 +330,7 @@ class EquityModel:
         self.equity_data.rename(columns={'date': 'liq_date'}, inplace=True)
 
         # add other liquidation etc
-        other_term = self.actions[self.actions['action'].isin(["regulatorydelisting", "voluntarydelisting"])]
+        other_term = self.actions[self.actions['action'].isin(["regulatorydelisting", "voluntarydelisting","delisted","tickerchangefrom"])]
         self.equity_data = pd.merge(self.equity_data,
                                     other_term[['ticker', 'date', 'action']],
                                     how='left',
@@ -284,7 +342,7 @@ class EquityModel:
         is_liquidation = self.equity_data['future_price'].isna() & (self.equity_data['liq_date'].notna())
         self.equity_data.loc[is_liquidation, 'future_price'] = 0
         self.equity_data['future_return'] = ((self.equity_data['future_price'] - self.equity_data['price']) /
-                                      self.equity_data['price'])
+                                             self.equity_data['price'])
         self.equity_data['future_return'] = self.equity_data['future_return'].replace([np.inf, -np.inf], np.nan)
 
         # calculate missing fields
@@ -298,30 +356,39 @@ class EquityModel:
         # price to sales
         self.equity_data['ps'] = np.where(
             (self.equity_data['ps'].isna()),
-            self.equity_data['marketcap']/self.equity_data['revenueusd'],
+            self.equity_data['marketcap'] / self.equity_data['revenueusd'],
             self.equity_data['ps'])
 
         # price to earnings
         self.equity_data['pe'] = np.where(
             (self.equity_data['pe'].isna()),
-            self.equity_data['marketcap']/self.equity_data['netinccmnusd'],
+            self.equity_data['marketcap'] / self.equity_data['netinccmnusd'],
             self.equity_data['pe'])
 
         self.equity_data = self.equity_data.replace([np.inf, -np.inf], np.nan)
 
         # metric trends
         self.equity_data.set_index(['ticker', 'calendardate'], inplace=True)
-        self.equity_data['revenueusd_1yr_change'] = self.equity_data['revenueusd'].pct_change(periods=4, fill_method=None)
-        self.equity_data['revenueusd_3yr_change'] = self.equity_data['revenueusd'].pct_change(periods=12, fill_method=None)
-        self.equity_data['revenueusd_5yr_change'] = self.equity_data['revenueusd'].pct_change(periods=20, fill_method=None)
+        self.equity_data['revenueusd_1yr_change'] = self.equity_data['revenueusd'].pct_change(periods=4,
+                                                                                              fill_method=None)
+        self.equity_data['revenueusd_3yr_change'] = self.equity_data['revenueusd'].pct_change(periods=12,
+                                                                                              fill_method=None)
+        self.equity_data['revenueusd_5yr_change'] = self.equity_data['revenueusd'].pct_change(periods=20,
+                                                                                              fill_method=None)
 
-        self.equity_data['gross_margin_1yr_change'] = self.equity_data['grossmargin'].pct_change(periods=4, fill_method=None)
-        self.equity_data['gross_margin_3yr_change'] = self.equity_data['grossmargin'].pct_change(periods=12, fill_method=None)
-        self.equity_data['gross_margin_5yr_change'] = self.equity_data['grossmargin'].pct_change(periods=20, fill_method=None)
+        self.equity_data['gross_margin_1yr_change'] = self.equity_data['grossmargin'].pct_change(periods=4,
+                                                                                                 fill_method=None)
+        self.equity_data['gross_margin_3yr_change'] = self.equity_data['grossmargin'].pct_change(periods=12,
+                                                                                                 fill_method=None)
+        self.equity_data['gross_margin_5yr_change'] = self.equity_data['grossmargin'].pct_change(periods=20,
+                                                                                                 fill_method=None)
 
-        self.equity_data['net_margin_1yr_change'] = self.equity_data['netmargin'].pct_change(periods=4, fill_method=None)
-        self.equity_data['net_margin_3yr_change'] = self.equity_data['netmargin'].pct_change(periods=12, fill_method=None)
-        self.equity_data['net_margin_5yr_change'] = self.equity_data['netmargin'].pct_change(periods=20, fill_method=None)
+        self.equity_data['net_margin_1yr_change'] = self.equity_data['netmargin'].pct_change(periods=4,
+                                                                                             fill_method=None)
+        self.equity_data['net_margin_3yr_change'] = self.equity_data['netmargin'].pct_change(periods=12,
+                                                                                             fill_method=None)
+        self.equity_data['net_margin_5yr_change'] = self.equity_data['netmargin'].pct_change(periods=20,
+                                                                                             fill_method=None)
 
         self.equity_data.reset_index(inplace=True)
         self.equity_data.replace([np.inf, -np.inf], np.nan, inplace=True)
@@ -330,9 +397,26 @@ class EquityModel:
         basic_mask = (self.equity_data['revenue'].notna() & self.equity_data['revenue'] != 0)
         self.equity_data = self.equity_data[basic_mask]
 
-        liq_mask = self.equity_data['liq_date'].notna() & (self.equity_data['liq_date'] < self.equity_data['calendardate'])
+        liq_mask = self.equity_data['liq_date'].notna() & (
+                self.equity_data['liq_date'] < self.equity_data['calendardate'])
         basic_data = self.equity_data[~liq_mask]
         basic_data.to_csv(os.path.join(self.analytics_dir, 'pre_model_ready.csv'), index=False)
+
+        # let's get the data to forecast
+        forecast_data = basic_data.copy()
+        forecast_data['result'] = 0
+        forecast_mask = ((basic_data['liq_date'].isna()) &
+                         (basic_data['price'].notna()) &
+                         (basic_data['corp_end_date'].isna()))
+        forecast_data = forecast_data[forecast_mask]
+        forecast_data = forecast_data[self.export_columns]
+        forecast_data = forecast_data.dropna()
+        forecast_data['result'] = np.nan
+        forecast_data = forecast_data.sort_values(by=['ticker', 'calendardate'], ascending=[True, False])
+        forecast_data = forecast_data.groupby('ticker').head(3)
+        forecast_data = forecast_data.groupby('ticker').filter(lambda x: len(x) == Constants.get_sequence_length())
+        forecast_data = forecast_data.sort_values(by=['ticker', 'calendardate'], ascending=[True, True])
+        forecast_data.to_csv(os.path.join(self.analytics_dir, 'forecast_data.csv'), index=False)
 
         # key fields that are needed for model processing
         filtered_mask = (self.equity_data['future_price'].notna()) & \
@@ -342,51 +426,14 @@ class EquityModel:
 
         filtered_data = self.equity_data[filtered_mask]
 
+        filtered_data['result'] = np.where(filtered_data['future_return'] > 0.1, 1, 0)
+
         # filtered_mask = filtered_data['liq_date'].notna() & (filtered_data['liq_date'] < filtered_data['calendardate'])
         # filtered_data = filtered_data[~filtered_mask]
 
         filtered_data = filtered_data[
-            ['ticker',
-             'calendardate',
-             'reportperiod',
-             'eps',
-             'bvps',
-             'dps',
-             'divyield',
-             'revenueusd',
-             'netinccmnusd',
-             'equityusd',
-             'assetsusd',
-             'debtusd',
-             'cashnequsd',
-             'liabilitiesusd',
-             'liabilitiescusd',
-             'liabilitiesncusd',
-             'assetscusd',
-             'assetsncusd',
-             'debtcusd',
-             'debtncusd',
-             'intangiblesusd',
-             'fcfusd',
-             'marketcap',
-             'ps',
-             'pe',
-             'roe',
-             'roa',
-             'pb',
-             'de',
-             'netmargin',
-             'grossmargin',
-             'sicindustry',
-             'sicsector',
-             'sector',
-             'industry',
-             'future_return',
-             'real-rate-1-month_ttm',
-             'real-rate-1-year_ttm',
-             'real-rate-10-year_ttm',
-             ]]
-
+            self.export_columns
+        ]
 
         dropped_records = filtered_data[filtered_data.isna().any(axis=1)]
         dropped_records.to_csv(os.path.join(self.analytics_dir, 'dropped_records.csv'), index=False)
