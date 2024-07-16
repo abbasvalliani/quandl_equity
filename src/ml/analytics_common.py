@@ -54,9 +54,23 @@ class AnalyticsCommon:
             'grossmargin',
             'sector',
             'industry',
-            'real-rate-1-month_ttm',
-            'real-rate-1-year_ttm',
-            'real-rate-10-year_ttm',
+            'price_crude_oil_ttm',
+            'price_natural_gas_ttm',
+            'price_gold_ttm',
+            'price_copper_ttm',
+            'price_iron_ttm',
+            'price_steel_ttm',
+            'price_wheat_ttm',
+            'price_corn_ttm',
+            'price_soybeans_ttm',
+            'price_rice_ttm',
+            'price_real_estate_US_ttm',
+            'rate_treasury_30_yr_ttm',
+            'rate_treasury_10_yr_ttm',
+            'rate_treasury_1_yr_ttm',
+            'rate_real_rate_10_yr_ttm',
+            'rate_real_rate_1_yr_ttm',
+            'rate_real_rate_1_mth_ttm',
             'result'
         ]
 
@@ -108,7 +122,23 @@ class AnalyticsCommon:
         ]
 
         standard_numeric_cols = [
-            'real-rate-1-month_ttm', 'real-rate-1-year_ttm', 'real-rate-10-year_ttm',
+            'price_crude_oil_ttm',
+            'price_natural_gas_ttm',
+            'price_gold_ttm',
+            'price_copper_ttm',
+            'price_iron_ttm',
+            'price_steel_ttm',
+            'price_wheat_ttm',
+            'price_corn_ttm',
+            'price_soybeans_ttm',
+            'price_rice_ttm',
+            'price_real_estate_US_ttm',
+            'rate_treasury_30_yr_ttm',
+            'rate_treasury_10_yr_ttm',
+            'rate_treasury_1_yr_ttm',
+            'rate_real_rate_10_yr_ttm',
+            'rate_real_rate_1_yr_ttm',
+            'rate_real_rate_1_mth_ttm',
         ]
 
         # scale financial data

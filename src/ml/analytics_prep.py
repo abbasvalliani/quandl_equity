@@ -1,5 +1,4 @@
 import sys
-import zipfile
 import pandas as pd
 import os
 import numpy as np
@@ -7,44 +6,22 @@ from pandas.tseries.offsets import DateOffset
 import requests
 from io import BytesIO
 from constants import Constants
-
-
-class Utils:
-    @staticmethod
-    def unzip(zip_file_path, num_rows):
-        with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
-            file_list = zip_ref.namelist()
-            if not file_list:
-                raise ValueError("The zip archive is empty.")
-
-            first_file = file_list[0]
-
-            with zip_ref.open(first_file) as file:
-                print(f"Reading file {first_file}")
-                if num_rows is None:
-                    df = pd.read_csv(file)
-                else:
-                    df = pd.read_csv(file, nrows=num_rows)
-                print(f"Done Reading file {first_file}")
-                return df
-
-    @staticmethod
-    def load_pandas(file, num_rows):
-        df = pd.read_csv(file, nrows=num_rows)
-        return df
+from utils import Utils
+from market_data import MarketData
 
 
 class EquityModel:
-    def __init__(self, data_dir, analytics_dir, num_rows):
+    def __init__(self, fred_api, data_dir, analytics_dir, num_rows):
         if not os.path.exists(analytics_dir):
             print(f"Not directory {analytics_dir} found")
             sys.exit(-1)
 
         # Initialize the zip file path
+        self.fred_api = fred_api
         self.num_rows = num_rows
         self.equity_data = None
         self.analytics_dir = analytics_dir
-        self.real_rates = None
+        self.market_data = None
         self.equity_prices = None
         self.ticker_data = None
         self.model_ready_data = None
@@ -87,44 +64,30 @@ class EquityModel:
             'sicsector',
             'sector',
             'industry',
-            'real-rate-1-month_ttm',
-            'real-rate-1-year_ttm',
-            'real-rate-10-year_ttm',
+            'price_crude_oil_ttm',
+            'price_natural_gas_ttm',
+            'price_gold_ttm',
+            'price_copper_ttm',
+            'price_iron_ttm',
+            'price_steel_ttm',
+            'price_wheat_ttm',
+            'price_corn_ttm',
+            'price_soybeans_ttm',
+            'price_rice_ttm',
+            'price_real_estate_US_ttm',
+            'rate_treasury_30_yr_ttm',
+            'rate_treasury_10_yr_ttm',
+            'rate_treasury_1_yr_ttm',
+            'rate_real_rate_10_yr_ttm',
+            'rate_real_rate_1_yr_ttm',
+            'rate_real_rate_1_mth_ttm',
             'future_return',
             'result'
         ]
 
-    def read_rates(self):
-        # import the workbook if available
-        url = 'https://www.clevelandfed.org/-/media/files/webcharts/inflationexpectations/inflation-expectations.xlsx?sc_lang=en&hash=3F94FEE8DAA429F01D7B5FE51C990D58'
-        response = requests.get(url)
-        response.raise_for_status()
-        excel_data = BytesIO(response.content)
-        self.real_rates = pd.read_excel(excel_data, sheet_name='Real Interest Rate')
-        self.real_rates = self.real_rates.dropna()
-
-        self.real_rates['Model Output Date'] = pd.to_datetime(self.real_rates['Model Output Date'], format='%m/%d/%y',
-                                                              errors='coerce')
-        self.real_rates = self.real_rates.rename(columns={
-            'Model Output Date': 'real-rate-model-date',
-            'Real Rate 1-month': 'real-rate-1-month',
-            'Real Rate 1-year': 'real-rate-1-year',
-            'Real Rate 10-year ': 'real-rate-10-year',
-        })
-
-        # adjust for the last month
-        last_row = self.real_rates.iloc[-1].copy()
-        last_row['real-rate-model-date'] = last_row['real-rate-model-date'] + pd.DateOffset(months=1)
-        last_row_df = pd.DataFrame([last_row])
-        self.real_rates = pd.concat([self.real_rates, last_row_df], ignore_index=True)
-
-        self.real_rates['calendardate'] = self.real_rates['real-rate-model-date'] - pd.DateOffset(days=1)
-        self.real_rates.set_index('calendardate', inplace=True)
-        columns_to_average = ['real-rate-1-month', 'real-rate-1-year', 'real-rate-10-year']
-        for column in columns_to_average:
-            self.real_rates[f'{column}_ttm'] = self.real_rates[column].rolling(window=12).mean()
-
-        self.real_rates = self.real_rates.dropna()
+    def read_market_data(self):
+        market_data = MarketData(self.fred_api)
+        self.market_data = market_data.get_market_data()
 
     def read_SF1(self, num_rows=None):
         self.equity_data = Utils.unzip(os.path.join(dir, "SF1.zip"), num_rows=num_rows)
@@ -144,7 +107,7 @@ class EquityModel:
         self.ticker_data = Utils.unzip(os.path.join(dir, "TICKERS.zip"), num_rows=num_rows)
 
     def read_data(self):
-        self.read_rates()
+        self.read_market_data()
         self.read_SF1(self.num_rows)
         self.read_prices(self.num_rows)
         self.read_actions(self.num_rows)
@@ -167,18 +130,23 @@ class EquityModel:
             right_on=['ticker']
         )
 
-        # get real rates
         self.equity_data = pd.merge(
             self.equity_data,
-            self.real_rates,
+            self.market_data,
             how='left',
             left_on=['calendardate'],
-            right_on=['calendardate']
+            right_on=['date']
         )
-        if len(self.equity_data['real-rate-1-month'].isna()) == 0:
-            print("Real rates not found.")
-            print(self.equity_data[self.equity_data['real-rate-1-month'].isna()].head())
-            sys.exit(-1)
+
+        # make sure market data exists
+        for market_data_col in self.market_data.columns:
+            if len(self.equity_data[market_data_col].isna()) == 0:
+                print(f"market data for {market_data_col} not found.")
+                print(self.equity_data[self.equity_data[market_data_col].isna()].head())
+                sys.exit(-1)
+
+        self.equity_data.drop(columns=['date'], inplace=True)
+        self.equity_data = self.equity_data[self.equity_data['calendardate'].notna()]
 
     def create_industry_proxies(self):
         # create the ratios
@@ -445,14 +413,15 @@ class EquityModel:
 
 
 if __name__ == "__main__":
-    dir = sys.argv[1]
-    analytics_dir = sys.argv[2]
+    fred_api = sys.argv[1]
+    dir = sys.argv[2]
+    analytics_dir = sys.argv[3]
     num_rows = None
-    if len(sys.argv) > 3:
-        num_rows = int(sys.argv[3])
+    if len(sys.argv) > 4:
+        num_rows = int(sys.argv[4])
 
     print(f"Running prep data_dir={dir} output_dir={analytics_dir} for num_rows:{num_rows}")
-    model = EquityModel(dir, analytics_dir, num_rows=num_rows)
+    model = EquityModel(fred_api, dir, analytics_dir, num_rows=num_rows)
     model.read_data()
     model.prepare_model_data()
     print('Done')
