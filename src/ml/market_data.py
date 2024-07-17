@@ -19,9 +19,13 @@ class AvgUtils:
 
 
 class MarketData:
-    def __init__(self, api_key):
-        self.api_key = api_key
-        self.indicators = {
+    @staticmethod
+    def get_indicators_ttm():
+        return [key + '_ttm' for key in MarketData.get_indicators().keys()]
+
+    @staticmethod
+    def get_indicators():
+        return {
             'price_crude_oil': 'DCOILWTICO',
             'price_natural_gas': 'PNGASUSUSDM',
             'price_gold': 'IQ12260',
@@ -39,7 +43,19 @@ class MarketData:
             'rate_real_rate_1_mth': 'REAINTRATREARAT1MO',
             'rate_real_rate_10_yr': 'REAINTRATREARAT10Y',
             'rate_real_rate_1_yr': 'REAINTRATREARAT1YE',
+            'jobs': 'PAYEMS',
+            'unemployment_rate': 'UNRATE',
+            'savings_rate': 'PSAVERT',
+            'disposable_income': 'DSPIC96',
+            'real_disposable_income': 'DSPIC96',
+            'retail_sales': 'RSAFS',
+            'industrial_production' : 'INDPRO',
+            'cpi' : 'CPIAUCSL'
         }
+
+    def __init__(self, api_key):
+        self.api_key = api_key
+        self.indicators = MarketData.get_indicators()
 
     @staticmethod
     def merge_dfs(left, right):
@@ -104,4 +120,3 @@ class FREDApi:
                 df = AvgUtils.get_ttm_data(df, column_to_avg)
             df.reset_index(inplace=True)
             return df
-

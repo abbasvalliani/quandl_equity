@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from sklearn.preprocessing import LabelEncoder, StandardScaler, PowerTransformer, RobustScaler
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.preprocessing.sequence import pad_sequences
+from market_data import MarketData
 
 
 class AnalyticsCommon:
@@ -17,62 +18,17 @@ class AnalyticsCommon:
     def get_sequence():
         return 3
 
-
     @staticmethod
     def get_model_columns():
-        return [
-            'ticker',
-            'calendardate',
-            'reportingquarter',
-            'eps',
-            'bvps',
-            'dps',
-            'divyield',
-            'revenueusd',
-            'netinccmnusd',
-            'equityusd',
-            'assetsusd',
-            'debtusd',
-            'cashnequsd',
-            'liabilitiesusd',
-            'liabilitiescusd',
-            'liabilitiesncusd',
-            'assetscusd',
-            'assetsncusd',
-            'debtcusd',
-            'debtncusd',
-            'intangiblesusd',
-            'fcfusd',
-            'marketcap',
-            'ps',
-            'pe',
-            'roe',
-            'roa',
-            'pb',
-            'de',
-            'netmargin',
-            'grossmargin',
-            'sector',
-            'industry',
-            'price_crude_oil_ttm',
-            'price_natural_gas_ttm',
-            'price_gold_ttm',
-            'price_copper_ttm',
-            'price_iron_ttm',
-            'price_steel_ttm',
-            'price_wheat_ttm',
-            'price_corn_ttm',
-            'price_soybeans_ttm',
-            'price_rice_ttm',
-            'price_real_estate_US_ttm',
-            'rate_treasury_30_yr_ttm',
-            'rate_treasury_10_yr_ttm',
-            'rate_treasury_1_yr_ttm',
-            'rate_real_rate_10_yr_ttm',
-            'rate_real_rate_1_yr_ttm',
-            'rate_real_rate_1_mth_ttm',
-            'result'
-        ]
+        model_columns = ['ticker', 'calendardate', 'reportingquarter', 'eps', 'bvps', 'dps', 'divyield', 'revenueusd',
+                         'netinccmnusd', 'equityusd', 'assetsusd', 'debtusd', 'cashnequsd', 'liabilitiesusd',
+                         'liabilitiescusd', 'liabilitiesncusd', 'assetscusd', 'assetsncusd', 'debtcusd', 'debtncusd',
+                         'intangiblesusd', 'fcfusd', 'marketcap', 'ps', 'pe', 'roe', 'roa', 'pb', 'de', 'netmargin',
+                         'grossmargin', 'sector', 'industry']
+        model_columns.extend(MarketData.get_indicators_ttm())
+        model_columns.extend(['result'])
+
+        return model_columns
 
     @staticmethod
     def read_file(data_file, num_rows=None):
@@ -87,8 +43,8 @@ class AnalyticsCommon:
 
         data['calendardate'] = pd.to_datetime(data['calendardate'])
         data['reportingquarter'] = data['calendardate'].dt.quarter
-        data = data[AnalyticsCommon.get_model_columns()]
 
+        data = data[AnalyticsCommon.get_model_columns()]
         return data
 
     @staticmethod
@@ -121,25 +77,8 @@ class AnalyticsCommon:
             'ps', 'pe', 'roe', 'roa', 'pb', 'de', 'netmargin', 'grossmargin'
         ]
 
-        standard_numeric_cols = [
-            'price_crude_oil_ttm',
-            'price_natural_gas_ttm',
-            'price_gold_ttm',
-            'price_copper_ttm',
-            'price_iron_ttm',
-            'price_steel_ttm',
-            'price_wheat_ttm',
-            'price_corn_ttm',
-            'price_soybeans_ttm',
-            'price_rice_ttm',
-            'price_real_estate_US_ttm',
-            'rate_treasury_30_yr_ttm',
-            'rate_treasury_10_yr_ttm',
-            'rate_treasury_1_yr_ttm',
-            'rate_real_rate_10_yr_ttm',
-            'rate_real_rate_1_yr_ttm',
-            'rate_real_rate_1_mth_ttm',
-        ]
+        # all these treated as standard columns
+        market_data_columns = MarketData.get_indicators_ttm()
 
         # scale financial data
         print(f"Scaling financial data")
@@ -151,7 +90,7 @@ class AnalyticsCommon:
 
         # standard scaler
         scaler = StandardScaler()
-        data[standard_numeric_cols] = scaler.fit_transform(data[standard_numeric_cols])
+        data[market_data_columns] = scaler.fit_transform(data[market_data_columns])
         print(f"Done scaling financial data")
 
         print(f"Creating ticker sequences")
