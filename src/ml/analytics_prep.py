@@ -2,10 +2,6 @@ import sys
 import pandas as pd
 import os
 import numpy as np
-from pandas.tseries.offsets import DateOffset
-import requests
-from io import BytesIO
-from constants import Constants
 from utils import Utils
 from market_data import MarketData
 
@@ -367,9 +363,9 @@ class EquityModel:
         forecast_data = forecast_data.dropna()
         forecast_data['result'] = np.nan
         forecast_data = forecast_data.sort_values(by=['ticker', 'calendardate'], ascending=[True, False])
-        forecast_data = forecast_data.groupby('ticker').head(3)
-        forecast_data = forecast_data.groupby('ticker').filter(lambda x: len(x) == Constants.get_sequence_length())
-        forecast_data = forecast_data.sort_values(by=['ticker', 'calendardate'], ascending=[True, True])
+        #forecast_data = forecast_data.groupby('ticker').head(3)
+        #forecast_data = forecast_data.groupby('ticker').filter(lambda x: len(x) == Constants.get_sequence_length())
+        #forecast_data = forecast_data.sort_values(by=['ticker', 'calendardate'], ascending=[True, True])
         forecast_data.to_csv(os.path.join(self.analytics_dir, 'forecast_data.csv'), index=False)
 
         # key fields that are needed for model processing

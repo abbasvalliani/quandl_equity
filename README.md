@@ -16,26 +16,30 @@ Create a .env file in the directory with the following:
 LOG_DIR=./temp_data/logs
 EQUITY_DATA_DIR=./temp_data/equity_data
 EQUITY_ANALYTICS_DIR=./temp_data/analytics_data
-QUANDL_API=<use your key>
+QUANDL_API=subscribe to core US fundamnetal data <https://data.nasdaq.com/publishers/SHARADAR>
+FRED_API= get key at <https://fred.stlouisfed.org/docs/api/api_key.html>
 MYSQL_USER=trader
-MYSQL_PASSWORD=<create one>
+MYSQL_PASSWORD=trader
 MYSQL_DATABASE=trader
 MYSQL_HOST=localhost
-MARIADB_ROOT_PASSWORD=<create one>
+MARIADB_ROOT_PASSWORD=<set a password>
 ```
 
 create a conda environment (make sure conda is installed):
 >./env_setup.sh
 
-download equities data and import to mysql
->./equity_download.sh
+download equities data
+>./quandl_download.sh
+
+upload to mysql data (optional)
+>./quandl_upload.sh
 
 run analytics preparation
 >./prep.sh
 
-> import model ready data into mysql
-> ./import_model_data.sh
-
 start training
 >./train.sh
+
+run forecast
+>./run_model.sh
 

@@ -14,9 +14,6 @@ from market_data import MarketData
 
 
 class AnalyticsCommon:
-    @staticmethod
-    def get_sequence():
-        return 3
 
     @staticmethod
     def get_model_columns():
