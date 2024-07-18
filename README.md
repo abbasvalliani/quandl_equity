@@ -25,7 +25,7 @@ MYSQL_HOST=localhost
 MARIADB_ROOT_PASSWORD=<set a password>
 ```
 
-create a conda environment (make sure conda is installed):
+create a conda environment (make sure conda is installed) and install requirements:
 >./env_setup.sh
 
 download equities data
