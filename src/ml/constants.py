@@ -1,5 +1,6 @@
 
 class Constants:
+
     @staticmethod
-    def get_sequence_length():
-        return 1
+    def get_target_price_appreciation():
+        return 0.1

@@ -4,7 +4,7 @@ import os
 import numpy as np
 from utils import Utils
 from market_data import MarketData
-
+from constants import Constants
 
 class EquityModel:
     def __init__(self, fred_api, data_dir, analytics_dir, num_rows):
@@ -64,7 +64,6 @@ class EquityModel:
 
         self.export_columns.extend(MarketData.get_indicators_ttm())
         self.export_columns.extend([
-            'future_return',
             'result'
         ])
     def read_market_data(self):
@@ -101,7 +100,8 @@ class EquityModel:
     def merga_tables(self):
         sf1_ticker_meta = self.ticker_data[self.ticker_data['table'] == 'SF1']
         select_ticker_fields = sf1_ticker_meta[
-            ['ticker', 'siccode', 'sicsector', 'sicindustry', 'famasector', 'famaindustry', 'sector', 'industry']]
+            ['ticker', 'siccode', 'sicsector', 'sicindustry', 'famasector', 'famaindustry', 'sector', 'industry',
+             'scalemarketcap', 'scalerevenue']]
 
         # get sector information
         self.equity_data = pd.merge(
@@ -375,9 +375,8 @@ class EquityModel:
                         (self.equity_data['future_return'].notna())
 
         filtered_data = self.equity_data[filtered_mask]
-
-        filtered_data['result'] = np.where(filtered_data['future_return'] > 0.1, 1, 0)
-
+        filtered_data['result'] = np.where(filtered_data['future_return'] > Constants.get_target_price_appreciation(), 1, 0)
+        #filtered_data = filtered_data.drop(columns=['future_price', 'future_return'])
         # filtered_mask = filtered_data['liq_date'].notna() & (filtered_data['liq_date'] < filtered_data['calendardate'])
         # filtered_data = filtered_data[~filtered_mask]
 

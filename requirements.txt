@@ -9,4 +9,5 @@ sqlalchemy
 pymysql
 requests
 scikeras
-
+openpyxl
+xgboost
