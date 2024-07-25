@@ -43,3 +43,5 @@ start training
 run forecast
 >./run_model.sh
 
+run report
+>./run_report.sh

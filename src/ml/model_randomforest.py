@@ -25,12 +25,23 @@ class RandomForestModel(BaseModel):
                          'intangiblesusd', 'fcfusd', 'marketcap', 'sector', 'industry'
                          ]
 
+        market_data_columns = [
+            'price_copper_ttm',
+            'price_rice_ttm',
+            'price_crude_oil_ttm',
+            'rate_real_rate_1_yr_ttm',
+            'rate_treasury_1_yr_ttm'
+        ]
+
+        # market_data_columns = MarketData.get_indicators_ttm()
+
         # model_columns = ['ticker', 'calendardate', 'reportingquarter', 'eps', 'bvps', 'dps', 'divyield', 'revenueusd',
         #                  'netinccmnusd', 'equityusd', 'assetsusd', 'debtusd', 'cashnequsd', 'liabilitiesusd',
         #                  'liabilitiescusd', 'liabilitiesncusd', 'assetscusd', 'assetsncusd', 'debtcusd', 'debtncusd',
         #                  'intangiblesusd', 'fcfusd', 'marketcap', 'ps', 'pe', 'roe', 'roa', 'pb', 'de', 'netmargin',
         #                  'grossmargin', 'sector', 'industry']
-        model_columns.extend(MarketData.get_indicators_ttm())
+
+        model_columns.extend(market_data_columns)
         model_columns.extend(['result'])
 
         return model_columns
@@ -79,7 +90,7 @@ class RandomForestModel(BaseModel):
 
         # 85%/80%
         self.model = RandomForestClassifier(
-            n_estimators=200,
+            n_estimators=300,
             max_depth=17,
             min_samples_split=2,
             min_samples_leaf=1,
@@ -94,6 +105,11 @@ class RandomForestModel(BaseModel):
         #     random_state=42)
 
     def train_model(self):
+        # computing correlations
+        print("Correlation matrix")
+        correlation_matrix = self.model_data.drop(columns=['ticker', 'calendardate']).corr()
+        print(correlation_matrix['result'])
+
         self.split_train_test()
 
         print(f"Training model")
